@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GökAsistan-3o</title>
-    <!-- Font: Helvetica Neue ve benzerleri için sans-serif -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -40,6 +39,10 @@
             color: var(--text-color);
             height: 100%;
             overflow: hidden;
+            /* Giriş ekranını dikey ve yatayda ortalamak için */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #app-container {
@@ -54,7 +57,6 @@
         #auth-container {
             width: 100%;
             max-width: 400px;
-            margin: auto;
             padding: 24px;
             background-color: var(--sidebar-bg);
             border-radius: 12px;
@@ -184,7 +186,7 @@
         .sidebar-logo {
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--primary-color);
+            color: var(--main-title-color);
             text-align: center;
         }
 
@@ -391,6 +393,15 @@
         .hidden {
             display: none !important;
         }
+
+        #chat-app-container {
+            display: none; /* Bu satır kaldırıldı */
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
     </style>
 </head>
 <body>
@@ -410,7 +421,7 @@
         <span id="toggle-auth-mode" class="toggle-auth-mode">Hesabın yok mu? Kaydol</span>
     </div>
 
-    <div id="chat-app-container" class="hidden">
+    <div id="chat-app-container">
         <div id="app-container">
             <!-- Mobil menü açma/kapama butonu -->
             <button id="sidebar-toggle">
@@ -485,33 +496,20 @@
         // === BURAYA YAPILANDIRMA AYARLARINIZI GİRİNİZ ===
         // =========================================================
 
-        // Adım 1'den aldığınız Firebase yapılandırma objesini buraya yapıştırın.
-        // Örnek: const firebaseConfig = { apiKey: "...", ... };
-      // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyARXo1J3dRw50kTPvuWPShewQcBFhewMkQ",
-  authDomain: "gokasistan.firebaseapp.com",
-  projectId: "gokasistan",
-  storageBucket: "gokasistan.firebasestorage.app",
-  messagingSenderId: "76350974511",
-  appId: "1:76350974511:web:d7f0d10c22d287d9dc34da",
-  measurementId: "G-T358KYVEBR"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+        // Sizin verdiğiniz Firebase yapılandırma objesi
+        const firebaseConfig = {
+            apiKey: "AIzaSyARXo1J3dRw50kTPvuWPShewQcBFhewMkQ",
+            authDomain: "gokasistan.firebaseapp.com",
+            projectId: "gokasistan",
+            storageBucket: "gokasistan.firebasestorage.app",
+            messagingSenderId: "76350974511",
+            appId: "1:76350974511:web:d7f0d10c22d287d9dc34da",
+            measurementId: "G-T358KYVEBR"
+        };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'gok-asistan-v3';
 
-        // Adım 3'ten aldığınız Gemini API anahtarınızı buraya yapıştırın.
-        const geminiApiKey = "AIzaSyCLWO-BvxUB4ZCuYiQtcqMxH2S605Rey48"; // BURAYA SİZİN Gemini API anahtarınızı yapıştırın
+        // Sizin verdiğiniz Gemini API anahtarı
+        const geminiApiKey = "AIzaSyCLWO-BvxUB4ZCuYiQtcqMxH2S605Rey48";
 
         // =========================================================
         
@@ -584,13 +582,11 @@ const analytics = getAnalytics(app);
         // onAuthStateChanged: Kimlik doğrulama durumu değiştiğinde çalışır
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Kullanıcı giriş yapmışsa
                 userId = user.uid;
                 userIdDisplay.textContent = userId;
                 showChatScreen();
                 await fetchChatHistory();
             } else {
-                // Kullanıcı çıkış yapmışsa
                 showAuthScreen();
                 userId = null;
                 currentChatId = null;

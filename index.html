@@ -409,7 +409,7 @@
     </style>
 </head>
 <body>
-    <div id="auth-container-wrapper" class="">
+    <div id="auth-container-wrapper">
         <div id="auth-container">
             <h2 id="auth-title">Giriş Yap</h2>
             <form id="login-form" class="auth-form">
@@ -427,7 +427,7 @@
         </div>
     </div>
 
-    <div id="chat-app-container" class="hidden">
+    <div id="chat-app-container">
         <div id="app-container">
             <!-- Mobil menü açma/kapama butonu -->
             <button id="sidebar-toggle">
@@ -887,6 +887,9 @@
             document.getElementById('modal-message').textContent = message;
             document.getElementById('modal-container').style.display = 'flex';
         }
+        
+        // Başlangıçta giriş ekranını göster
+        showAuthScreen();
     </script>
 </body>
 </html>

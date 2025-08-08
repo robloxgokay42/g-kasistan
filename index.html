@@ -56,6 +56,10 @@
             align-items: center;
             z-index: 100;
         }
+        
+        .hidden {
+            display: none !important;
+        }
 
         #auth-container {
             width: 100%;
@@ -125,7 +129,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            display: none; /* Varsayılan olarak gizli */
+            display: flex; /* Varsayılan olarak flex, JS ile gizlenecek */
             background-color: var(--bg-color); /* Ana sohbet arkaplan rengi */
         }
         
@@ -495,11 +499,6 @@
             max-width: 400px;
         }
         
-        /* Utility */
-        .hidden {
-            display: none !important;
-        }
-        
         /* Görsel yükleme önizlemesi */
         .image-preview {
             max-width: 150px;
@@ -510,7 +509,7 @@
     </style>
 </head>
 <body>
-    <div id="auth-container-wrapper" class="hidden">
+    <div id="auth-container-wrapper">
         <div id="auth-container">
             <h2 id="auth-title">Giriş Yap</h2>
             <form id="login-form" class="auth-form">
@@ -695,13 +694,13 @@
         // === UI Durum Yönetimi Fonksiyonları ===
         // =========================================================
         function showAuthScreen() {
-            authContainerWrapper.style.display = 'flex';
-            chatAppContainer.style.display = 'none';
+            authContainerWrapper.classList.remove('hidden');
+            chatAppContainer.classList.add('hidden');
         }
 
         function showChatScreen() {
-            authContainerWrapper.style.display = 'none';
-            chatAppContainer.style.display = 'flex';
+            authContainerWrapper.classList.add('hidden');
+            chatAppContainer.classList.remove('hidden');
         }
         
         // Mobil menü açma/kapama
@@ -895,7 +894,7 @@
 
             const chatsCollection = collection(db, `artifacts/${appId}/users/${userId}/chats`);
             // onSnapshot ile gerçek zamanlı dinleme
-            onSnapshot(query(chatsCollection), (snapshot) => {
+            onSnapshot(query(chatsCollection, orderBy('createdAt', 'desc')), (snapshot) => {
                 const chats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderChatHistory(chats);
                 // Eğer yeni bir sohbet başlatılmadıysa, en son sohbeti yükle
@@ -996,8 +995,8 @@
             displayMessage('user', userMessage);
             if (selectedFiles.length > 0) {
                  // Görsel önizlemelerini de mesaja ekle
-                const filePreviews = document.getElementById('active-options-container').innerHTML;
-                displayMessage('user', filePreviews, false, true);
+                const filePreviews = activeOptionsContainer.innerHTML;
+                displayMessage('user', filePreviews, false, false);
             }
             
             const userMessageData = {
@@ -1005,7 +1004,7 @@
                 content: userMessage,
                 timestamp: serverTimestamp(),
                 option: selectedOption,
-                files: selectedFiles.map(file => ({ name: file.name, type: file.type }))
+                files: selectedFiles.length > 0 ? selectedFiles.map(file => ({ name: file.name, type: file.type })) : null
             };
             await saveMessage(userMessageData);
             

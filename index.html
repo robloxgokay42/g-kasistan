@@ -43,7 +43,7 @@
 
         /* Giriş ve Kaydolma Ekranı için sarmalayıcı */
         #auth-container-wrapper {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -117,12 +117,13 @@
         
         /* Sohbet Uygulaması Arayüzü */
         #chat-app-container {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             display: none; /* Varsayılan olarak gizli */
+            background-color: var(--bg-color); /* Ana sohbet arkaplan rengi */
         }
         
         #app-container {
@@ -548,13 +549,13 @@
         // === UI Durum Yönetimi Fonksiyonları ===
         // =========================================================
         function showAuthScreen() {
-            authContainerWrapper.classList.remove('hidden');
-            chatAppContainer.classList.add('hidden');
+            authContainerWrapper.style.display = 'flex';
+            chatAppContainer.style.display = 'none';
         }
 
         function showChatScreen() {
-            authContainerWrapper.classList.add('hidden');
-            chatAppContainer.classList.remove('hidden');
+            authContainerWrapper.style.display = 'none';
+            chatAppContainer.style.display = 'flex';
         }
         
         // Mobil menü açma/kapama

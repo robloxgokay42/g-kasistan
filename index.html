@@ -39,21 +39,20 @@
             color: var(--text-color);
             height: 100%;
             overflow: hidden;
-            /* Giriş ekranını dikey ve yatayda ortalamak için */
-            display: flex;
+            display: flex; /* Bu satırı koruduk ama iç elemanların görünürlüğünü yöneteceğiz */
             justify-content: center;
             align-items: center;
         }
 
-        #app-container {
+        /* Giriş ve Kaydolma Ekranı için ortalama */
+        #auth-container-wrapper {
             display: flex;
+            justify-content: center;
+            align-items: center;
             height: 100%;
-            overflow: hidden;
-            max-width: 1354px;
-            margin: 0 auto;
+            width: 100%;
         }
 
-        /* Giriş ve Kaydolma Ekranı */
         #auth-container {
             width: 100%;
             max-width: 400px;
@@ -120,6 +119,15 @@
             display: none; /* Varsayılan olarak gizli */
             width: 100%;
             height: 100%;
+        }
+        
+        #app-container {
+            display: flex;
+            height: 100%;
+            overflow: hidden;
+            max-width: 1354px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         /* Mobil Arayüz (varsayılan) */
@@ -393,19 +401,18 @@
         .hidden {
             display: none !important;
         }
-
-        #chat-app-container {
-            display: none; /* Bu satır kaldırıldı */
+        
+        /* Sohbet uygulaması, giriş ekranı gizliyken tüm alanı kaplamalı */
+        #chat-app-container.visible {
+            display: flex;
+            flex-direction: column;
             width: 100%;
             height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
         }
     </style>
 </head>
 <body>
-    <div id="auth-container">
+    <div id="auth-container" class="">
         <h2 id="auth-title">Giriş Yap</h2>
         <form id="login-form" class="auth-form">
             <input type="email" id="login-email" placeholder="E-posta" required>
@@ -421,7 +428,7 @@
         <span id="toggle-auth-mode" class="toggle-auth-mode">Hesabın yok mu? Kaydol</span>
     </div>
 
-    <div id="chat-app-container">
+    <div id="chat-app-container" class="hidden">
         <div id="app-container">
             <!-- Mobil menü açma/kapama butonu -->
             <button id="sidebar-toggle">
@@ -524,13 +531,13 @@
 
         // HTML elemanlarını seçme
         const authContainer = document.getElementById('auth-container');
+        const chatAppContainer = document.getElementById('chat-app-container');
         const loginForm = document.getElementById('login-form');
         const registerForm = document.getElementById('register-form');
         const authTitle = document.getElementById('auth-title');
         const authMessage = document.getElementById('auth-message');
         const toggleAuthModeBtn = document.getElementById('toggle-auth-mode');
         
-        const chatAppContainer = document.getElementById('chat-app-container');
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const sendButton = document.getElementById('send-button');
@@ -582,12 +589,19 @@
         // onAuthStateChanged: Kimlik doğrulama durumu değiştiğinde çalışır
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Kullanıcı giriş yapmışsa
                 userId = user.uid;
                 userIdDisplay.textContent = userId;
-                showChatScreen();
+                
+                // Sohbet ekranını görünür yap ve auth ekranını gizle
+                chatAppContainer.classList.remove('hidden');
+                authContainer.classList.add('hidden');
+                
                 await fetchChatHistory();
             } else {
-                showAuthScreen();
+                // Kullanıcı çıkış yapmışsa
+                authContainer.classList.remove('hidden');
+                chatAppContainer.classList.add('hidden');
                 userId = null;
                 currentChatId = null;
                 if(unsubscribeMessages) {

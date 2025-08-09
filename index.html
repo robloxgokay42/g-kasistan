@@ -62,10 +62,27 @@
             margin: 0;
             padding: 0;
             font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
             height: 100%;
             overflow: hidden;
+            color: var(--text-color);
+        }
+
+        /* Yeni Arkaplan Stilleri */
+        #main-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at top left, #3a2a4b, #212121 50%),
+                        radial-gradient(circle at bottom right, #4b2a2a, #212121 50%);
+            background-size: cover;
+            transition: background 1s ease-in-out;
+        }
+
+        #main-bg.gray {
+            background: #212121;
         }
 
         /* Giriş ve Kaydolma Ekranı için sarmalayıcı */
@@ -153,8 +170,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            display: flex; /* Varsayılan olarak flex, JS ile gizlenecek */
-            background-color: var(--bg-color); /* Ana sohbet arkaplan rengi */
+            display: flex;
+            background-color: transparent;
         }
         
         #app-container {
@@ -205,6 +222,8 @@
             display: flex;
             flex-direction: column;
             width: 100%;
+            background-color: rgba(33, 33, 33, 0.5); /* Yarı şeffaf arkaplan */
+            backdrop-filter: blur(5px);
         }
         
         /* Ayarlar Paneli (Modal) */
@@ -491,6 +510,8 @@
         .chat-message.ai .chat-message-bubble {
             background-color: var(--message-ai-bg);
             border-bottom-left-radius: 4px;
+            display: flex;
+            flex-direction: column;
         }
         
         .chat-message-bubble p {
@@ -508,6 +529,26 @@
             max-width: 100%;
             border-radius: 8px;
             margin-top: 10px;
+        }
+
+        /* Yapay Zeka Cevap Butonları */
+        .ai-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .ai-actions button {
+            background: none;
+            border: none;
+            color: var(--sub-text-color);
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 18px;
+        }
+        .ai-actions button:hover {
+            color: var(--active-color);
         }
 
         .chat-input-container {
@@ -587,11 +628,15 @@
             border-radius: 50%;
             border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
-            margin-left: 10px;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-style: italic;
+            color: var(--sub-text-color);
         }
         
         /* Yeni Özellikler Paneli */
@@ -695,9 +740,26 @@
         .menu-item.settings:hover i {
             color: var(--active-color);
         }
+
+        /* AI mesajı kopyalama butonu */
+        .copy-button {
+            background: none;
+            border: none;
+            color: var(--sub-text-color);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        .copy-button:hover {
+            color: var(--active-color);
+        }
     </style>
 </head>
 <body>
+    <!-- Yeni Arkaplan -->
+    <div id="main-bg"></div>
+    
     <div id="auth-container-wrapper">
         <div id="auth-container">
             <h2 id="auth-title">Giriş Yap</h2>
@@ -998,6 +1060,7 @@
         const voiceSelect = document.getElementById('voice-select');
         const showSuggestionsToggle = document.getElementById('show-suggestions-toggle');
         const playSoundButton = document.getElementById('play-sound-button');
+        const mainBg = document.getElementById('main-bg');
         
         // =========================================================
         // === UI Durum Yönetimi Fonksiyonları ===
@@ -1005,6 +1068,7 @@
         function showAuthScreen() {
             authContainerWrapper.classList.remove('hidden');
             chatAppContainer.classList.add('hidden');
+            mainBg.classList.remove('gray');
         }
 
         function showChatScreen() {
@@ -1125,7 +1189,6 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userId = user.uid;
-                // userIdDisplay.textContent = userId; // Kaldırıldı
                 showChatScreen();
                 loadSettings();
                 fetchChatHistory();
@@ -1291,6 +1354,8 @@
                 });
                 chatMessages.scrollTop = chatMessages.scrollHeight; // En alta kaydır
             });
+            
+            mainBg.classList.add('gray');
         }
 
         // Yeni sohbet başlatma
@@ -1300,9 +1365,14 @@
             }
             currentChatId = null;
             chatMessages.innerHTML = '';
+            
             // Aktif sohbet işaretini kaldır
             document.querySelectorAll('.chat-history-item').forEach(el => el.classList.remove('active'));
             newChatButton.classList.add('active');
+            
+            // Arka planı eski haline getir
+            mainBg.classList.remove('gray');
+
             // Mobil menüyü kapat
             sidebar.classList.remove('open');
         });
@@ -1352,19 +1422,27 @@
             
             chatInput.value = '';
             activeOptionsContainer.innerHTML = '';
+            const previousSelectedOption = selectedOption; // Seçeneği kaydet
             selectedOption = null;
             selectedFiles = [];
 
             // AI'dan yanıt bekle
-            const aiLoadingIndicator = displayMessage('ai', 'Yanıt bekleniyor...', true);
+            let loadingText = 'GökAsistan düşünüyor...';
+            if (previousSelectedOption === 'gorsel-olustur') {
+                loadingText = 'Görsel oluşturuluyor...';
+            } else if (previousSelectedOption === 'webde-arama') {
+                loadingText = 'Webde aranıyor...';
+            }
+            const aiLoadingIndicator = displayMessage('ai', loadingText, true);
+            mainBg.classList.add('gray');
             
             try {
                 let aiResponse = '';
                 let isImage = false;
-                if (selectedOption === 'gorsel-olustur') {
+                if (previousSelectedOption === 'gorsel-olustur') {
                     aiResponse = await generateImage(userMessage);
                     isImage = true;
-                } else if (selectedOption === 'webde-arama') {
+                } else if (previousSelectedOption === 'webde-arama') {
                     aiResponse = await searchWeb(userMessage);
                 } else if (selectedFiles.length > 0) {
                      const fileData = await processFiles(userMessage, selectedFiles);
@@ -1525,9 +1603,10 @@
             bubble.className = 'chat-message-bubble';
             
             if (isLoading) {
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'loading-indicator';
-                bubble.appendChild(loadingDiv);
+                bubble.innerHTML = `<div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="loading-indicator"></div>
+                    <span class="loading-text">${content}</span>
+                </div>`;
             } else if (isImage) {
                 const img = document.createElement('img');
                 img.src = content;
@@ -1535,7 +1614,32 @@
                 bubble.appendChild(img);
             } else {
                 // Markdown desteği
-                bubble.innerHTML = `<p>${markdownToHtml(content)}</p>`;
+                const textContent = document.createElement('p');
+                textContent.innerHTML = markdownToHtml(content);
+                bubble.appendChild(textContent);
+
+                // Sadece AI mesajlarına aksiyon butonları ekle
+                if (role === 'ai') {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'ai-actions';
+                    actionsDiv.innerHTML = `
+                        <button class="copy-button"><i class="fa-regular fa-copy"></i></button>
+                        <button><i class="fa-regular fa-thumbs-up"></i></button>
+                        <button><i class="fa-regular fa-thumbs-down"></i></button>
+                        <button><i class="fa-solid fa-volume-high"></i></button>
+                        <button><i class="fa-regular fa-pen-to-square"></i></button>
+                        <button><i class="fa-solid fa-share-nodes"></i></button>
+                        <button><i class="fa-solid fa-repeat"></i></button>
+                    `;
+                    
+                    // Kopyala butonuna işlevsellik ekle
+                    actionsDiv.querySelector('.copy-button').addEventListener('click', () => {
+                        const messageText = textContent.textContent || content;
+                        navigator.clipboard.writeText(messageText);
+                    });
+                    
+                    bubble.appendChild(actionsDiv);
+                }
             }
             
             messageDiv.appendChild(bubble);
@@ -1547,11 +1651,37 @@
         
         // Yükleyiciyi gerçek mesajla güncelleme
         function updateMessage(bubble, content, isImage = false) {
+             bubble.innerHTML = ''; // Yükleyiciyi temizle
+
              if (isImage) {
-                bubble.innerHTML = `<img src="${content}" class="image-preview" />`;
+                const img = document.createElement('img');
+                img.src = content;
+                img.className = 'image-preview';
+                bubble.appendChild(img);
              } else {
-                bubble.innerHTML = `<p>${markdownToHtml(content)}</p>`;
+                // Markdown desteği
+                const textContent = document.createElement('p');
+                textContent.innerHTML = markdownToHtml(content);
+                bubble.appendChild(textContent);
              }
+
+             // AI mesajı tepkilerini tekrar ekle
+             const actionsDiv = document.createElement('div');
+             actionsDiv.className = 'ai-actions';
+             actionsDiv.innerHTML = `
+                <button class="copy-button"><i class="fa-regular fa-copy"></i></button>
+                <button><i class="fa-regular fa-thumbs-up"></i></button>
+                <button><i class="fa-regular fa-thumbs-down"></i></button>
+                <button><i class="fa-solid fa-volume-high"></i></button>
+                <button><i class="fa-regular fa-pen-to-square"></i></button>
+                <button><i class="fa-solid fa-share-nodes"></i></button>
+                <button><i class="fa-solid fa-repeat"></i></button>
+             `;
+             actionsDiv.querySelector('.copy-button').addEventListener('click', () => {
+                 const messageText = bubble.querySelector('p').textContent || content;
+                 navigator.clipboard.writeText(messageText);
+             });
+             bubble.appendChild(actionsDiv);
         }
         
         function markdownToHtml(text) {

@@ -75,8 +75,8 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background: radial-gradient(circle at top left, #3a2a4b, #212121 50%),
-                        radial-gradient(circle at bottom right, #4b2a2a, #212121 50%);
+            background: radial-gradient(circle at top left, #5c2c77, #212121 50%),
+                        radial-gradient(circle at bottom right, #772c2c, #212121 50%);
             background-size: cover;
             transition: background 1s ease-in-out;
         }
@@ -962,13 +962,36 @@
                         </label>
                     </div>
                 </div>
-                <!-- Diğer ayar sekmeleri buraya gelecek -->
-                <div class="settings-tab hidden" id="tab-notifications"><h3>Bildirimler</h3></div>
-                <div class="settings-tab hidden" id="tab-customization"><h3>Kişiselleştirme</h3></div>
-                <div class="settings-tab hidden" id="tab-connected-apps"><h3>Connected apps</h3></div>
-                <div class="settings-tab hidden" id="tab-data-controls"><h3>Veri kontrolleri</h3></div>
-                <div class="settings-tab hidden" id="tab-security"><h3>Güvenlik</h3></div>
-                <div class="settings-tab hidden" id="tab-account"><h3>Hesap</h3></div>
+                <!-- Bildirim Ayarları -->
+                <div class="settings-tab hidden" id="tab-notifications">
+                    <h3 class="settings-category-title">Bildirimler</h3>
+                    <p style="color: var(--sub-text-color);">Bu özellik yakında geliyor!</p>
+                </div>
+                <!-- Kişiselleştirme Ayarları -->
+                <div class="settings-tab hidden" id="tab-customization">
+                    <h3 class="settings-category-title">Kişiselleştirme</h3>
+                    <p style="color: var(--sub-text-color);">Bu özellik yakında geliyor!</p>
+                </div>
+                <!-- Connected Apps Ayarları -->
+                <div class="settings-tab hidden" id="tab-connected-apps">
+                    <h3 class="settings-category-title">Connected apps</h3>
+                    <p style="color: var(--sub-text-color);">Bu özellik yakında geliyor!</p>
+                </div>
+                <!-- Veri Kontrol Ayarları -->
+                <div class="settings-tab hidden" id="tab-data-controls">
+                    <h3 class="settings-category-title">Veri kontrolleri</h3>
+                    <p style="color: var(--sub-text-color);">Bu özellik yakında geliyor!</p>
+                </div>
+                <!-- Güvenlik Ayarları -->
+                <div class="settings-tab hidden" id="tab-security">
+                    <h3 class="settings-category-title">Güvenlik</h3>
+                    <p style="color: var(--sub-text-color);">Bu özellik yakında geliyor!</p>
+                </div>
+                 <!-- Hesap Ayarları -->
+                <div class="settings-tab hidden" id="tab-account">
+                    <h3 class="settings-category-title">Hesap</h3>
+                    <p style="color: var(--sub-text-color);">Bu özellik yakında geliyor!</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1439,7 +1462,11 @@
             try {
                 let aiResponse = '';
                 let isImage = false;
-                if (previousSelectedOption === 'gorsel-olustur') {
+
+                // "naber" özel yanıtı
+                if (userMessage.toLowerCase().trim() === 'naber') {
+                    aiResponse = "İyiyim, sorduğunuz için teşekkür ederim! Size nasıl yardımcı olabilirim?";
+                } else if (previousSelectedOption === 'gorsel-olustur') {
                     aiResponse = await generateImage(userMessage);
                     isImage = true;
                 } else if (previousSelectedOption === 'webde-arama') {

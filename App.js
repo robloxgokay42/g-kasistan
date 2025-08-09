@@ -1,25 +1,18 @@
 // app.js
+import { FIREBASE_CONFIG, GOOGLE_AISTUDIO_API_KEY } from './config.js';
+
+// Firebase modular SDK import (CDN)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.20.0/firebase-firestore.js";
 
-/* --- FIREBASE CONFIG (senin verdiğin) --- */
-const firebaseConfig = {
-  apiKey: "AIzaSyARXo1J3dRw50kTPvuWPShewQcBFhewMkQ",
-  authDomain: "gokasistan.firebaseapp.com",
-  projectId: "gokasistan",
-  storageBucket: "gokasistan.firebasestorage.app",
-  messagingSenderId: "76350974511",
-  appId: "1:76350974511:web:d7f0d10c22d287d9dc34da",
-  measurementId: "G-T358KYVEBR"
-};
-
-const APP_ID = "gokasistan"; // artifacts/{appId}/users/{uid}/...
-const app = initializeApp(firebaseConfig);
+// Init Firebase
+const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* UI */
+const APP_ID = "gokasistan";
+
 const userEmailEl = document.getElementById('user-email');
 const signoutBtn = document.getElementById('signout');
 const sendBtn = document.getElementById('send-btn');
@@ -30,7 +23,6 @@ const chatsList = document.getElementById('chats-list');
 
 let currentChatId = null;
 
-/* Auth state */
 onAuthStateChanged(auth, user => {
   if(user){
     userEmailEl.textContent = user.email;
@@ -39,24 +31,18 @@ onAuthStateChanged(auth, user => {
     userEmailEl.innerHTML = `<button id="sign-in-google">Google ile giriş</button>`;
     document.getElementById('sign-in-google').addEventListener('click', async () => {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      try { await signInWithPopup(auth, provider); }
+      catch(e){ alert('Giriş hata: '+e.message); }
     });
   }
 });
 
 signoutBtn.addEventListener('click', ()=> signOut(auth));
-
-newChatBtn.addEventListener('click', async () => {
-  const u = auth.currentUser;
-  if(!u) return alert('Giriş yapın');
+newChatBtn.addEventListener('click', ()=> {
+  if(!auth.currentUser) return alert('Giriş yapın');
   currentChatId = 'chat-' + Date.now();
   chatArea.innerHTML = '';
-  const li = document.createElement('li');
-  li.textContent = `Yeni sohbet — ${new Date().toLocaleString()}`;
-  chatsList.prepend(li);
-
-  // start listening messages for this chat
-  listenMessagesForChat(u.uid, currentChatId);
+  listenMessagesForChat(auth.currentUser.uid, currentChatId);
 });
 
 sendBtn.addEventListener('click', sendPrompt);
@@ -64,32 +50,57 @@ promptInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendPrompt(
 
 async function sendPrompt(){
   const text = promptInput.value.trim();
-  const u = auth.currentUser;
-  if(!u) return alert('Giriş yapmalısın');
+  const user = auth.currentUser;
+  if(!user) return alert('Giriş yapın');
   if(!text) return;
 
-  if(!currentChatId){
+  if(!currentChatId) {
     currentChatId = 'chat-' + Date.now();
-    listenMessagesForChat(u.uid, currentChatId);
+    listenMessagesForChat(user.uid, currentChatId);
   }
 
-  const messagesRef = collection(db, 'artifacts', APP_ID, 'users', u.uid, 'chats', currentChatId, 'messages');
+  const messagesRef = collection(db, 'artifacts', APP_ID, 'users', user.uid, 'chats', currentChatId, 'messages');
   await addDoc(messagesRef, { sender:'user', text, createdAt: serverTimestamp() });
   promptInput.value = '';
 
-  // çağrı sunucuya: sunucuda GOOGLE_AI_KEY kullanılır
+  // === GOOGLE AI STUDIO ÇAĞRISI (İstemci tarafı, doğrudan API key kullanılıyor) ===
   try {
-    const res = await fetch('/api/ai', {
+    // Not: endpoint yapısı Google tarafında değişebilir, bu örnek "generativelanguage" API pattern'ine göre.
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generate?key=${GOOGLE_AISTUDIO_API_KEY}`;
+
+    const body = {
+      // örnek payload — gerektiğinde Google dokümantasyonuna göre değiştir
+      prompt: {
+        text: text
+      },
+      // parametreler (isteğe göre)
+      temperature: 0.2,
+      maxOutputTokens: 512
+    };
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: text, userId: u.uid, chatId: currentChatId })
+      body: JSON.stringify(body)
     });
-    const json = await res.json();
-    const aiText = json?.reply || 'AI cevaplayamadı.';
+
+    const json = await response.json();
+    // Basit parse (google'ın yanıt formatına göre uyarlaman gerekebilir)
+    let aiText = '';
+    if(json && json.candidates && json.candidates.length > 0){
+      aiText = json.candidates[0].content || JSON.stringify(json.candidates[0]);
+    } else if(json?.output?.[0]?.content) {
+      aiText = json.output.map(o => o.content).join('\n');
+    } else {
+      aiText = JSON.stringify(json);
+    }
+
     await addDoc(messagesRef, { sender:'ai', text: aiText, createdAt: serverTimestamp() });
   } catch(err){
-    console.error(err);
-    await addDoc(messagesRef, { sender:'ai', text: 'AI isteğinde hata: ' + err.message, createdAt: serverTimestamp() });
+    console.error('AI hatası', err);
+    await addDoc(collection(db, 'artifacts', APP_ID, 'users', user.uid, 'chats', currentChatId, 'messages'), {
+      sender: 'ai', text: 'AI isteğinde hata: ' + err.message, createdAt: serverTimestamp()
+    });
   }
 }
 
@@ -112,11 +123,12 @@ function listenMessagesForChat(userId, chatId){
 
 function loadChats(uid){
   chatsList.innerHTML = '';
-  const sample = document.createElement('li');
-  sample.textContent = 'Yeni sohbet';
-  sample.addEventListener('click', () => {
+  // Basit placeholder. Sohbetleri listellemek için /chats collection'ına meta verisi kaydet.
+  const li = document.createElement('li');
+  li.textContent = 'Yeni sohbet';
+  li.addEventListener('click', () => {
     currentChatId = 'chat-sample';
     listenMessagesForChat(uid, currentChatId);
   });
-  chatsList.appendChild(sample);
+  chatsList.appendChild(li);
 }

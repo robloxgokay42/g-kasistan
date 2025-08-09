@@ -4,18 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>GökAsistan-3o</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Helvetica Neue yüklü olmayabilir, fallback olarak system font kullanıyoruz -->
-  <style>
-    /* minimal reset */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html,body,#app { height: 100%; }
-    body {
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      background: linear-gradient(180deg,#0b1220 0%, #151a25 100%);
-      color: #fff;
-    }
-  </style>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -29,9 +17,7 @@
       </nav>
 
       <div class="chats-title">Sohbetler</div>
-      <ul id="chats-list" class="chats-list">
-        <!-- dinamik sohbetler -->
-      </ul>
+      <ul id="chats-list" class="chats-list"></ul>
 
       <div class="account">
         <div id="user-email"></div>
@@ -50,9 +36,7 @@
         </div>
       </header>
 
-      <section id="chat-area" class="chat-area">
-        <!-- mesajlar buraya -->
-      </section>
+      <section id="chat-area" class="chat-area"></section>
     </main>
   </div>
 
